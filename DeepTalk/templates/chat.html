@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="chat-container">
+  <section class="chat-header">
+    <div class="header-content">
+      <div class="user-info">
+        <div class="avatar">{{ connection.avatar_emoji or '👤' }}</div>
+        <div class="user-details">
+          <h2>{{ connection.nickname }}</h2>
+          <p>{{ connection.bio }}</p>
+        </div>
+      </div>
+      <a href="/connections" class="back-btn">← Zurück</a>
+    </div>
+  </section>
+
+<style>
+.chat-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  background: linear-gradient(135deg, var(--bg-sec) 0%, #1a2332 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.avatar {
+  font-size: 3rem;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--acc) 0%, #4a9eff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(74, 158, 255, 0.3);
+}
+
+.user-details h2 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--txt);
+}
+
+.user-details p {
+  margin: 0.5rem 0 0 0;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+.back-btn {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--acc);
+  transform: translateX(-4px);
+}
+
+.chat-main {
+  flex: 1;
+  background: linear-gradient(135deg, var(--bg-sec) 0%, #0f1419 100%);
+  border-radius: 24px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.messages-area {
+  flex: 1;
+  background: rgba(11, 18, 32, 0.6);
+  border-radius: 20px;
+  padding: 2rem;
+  overflow-y: auto;
+  min-height: 500px;
+  max-height: 600px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 2rem;
+}
+
+.message-container {
+  margin-bottom: 1.5rem;
+  animation: fadeInUp 0.3s ease;
+}
+
+.message-container.own {
+  text-align: right;
+}
+
+.message-bubble {
+  display: inline-block;
+  max-width: 75%;
+  padding: 1rem 1.5rem;
+  border-radius: 20px;
+  position: relative;
+  word-wrap: break-word;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.message-bubble.own {
+  background: linear-gradient(135deg, var(--acc) 0%, #4a9eff 100%);
+  color: white;
+  border-bottom-right-radius: 6px;
+}
+
+.message-bubble.other {
+  background: linear-gradient(135deg, #2a2f3d 0%, #3a4050 100%);
+  color: var(--txt);
+  border-bottom-left-radius: 6px;
+}
+
+.message-bubble p {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.message-bubble small {
+  opacity: 0.8;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.message-form {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.message-input {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--txt);
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  resize: none;
+  min-height: 60px;
+  max-height: 120px;
+}
+
+.message-input:focus {
+  border-color: var(--acc);
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
+}
+
+.send-btn {
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, var(--acc) 0%, #4a9eff 100%);
+  color: white;
+  border: none;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(74, 158, 255, 0.3);
+}
+
+.send-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 158, 255, 0.4);
+}
+
+.send-btn:active {
+  transform: translateY(0);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  margin-top: 4rem;
+}
+
+.empty-state p {
+  font-size: 1.2rem;
+  margin: 1rem 0;
+}
+
+.info-section {
+  background: linear-gradient(135deg, rgba(227, 242, 253, 0.1) 0%, rgba(33, 150, 243, 0.05) 100%);
+  padding: 2rem;
+  border-radius: 20px;
+  margin-top: 2rem;
+  border-left: 4px solid var(--acc);
+  backdrop-filter: blur(10px);
+}
+
+.info-section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--acc);
+  font-size: 1.4rem;
+}
+
+.info-section p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar styling */
+.messages-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-area::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.messages-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.messages-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .chat-container {
+    padding: 1rem;
+  }
+  
+  .chat-header {
+    padding: 1.5rem;
+  }
+  
+  .user-info {
+    gap: 1rem;
+  }
+  
+  .avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+  }
+  
+  .user-details h2 {
+    font-size: 1.5rem;
+  }
+  
+  .message-bubble {
+    max-width: 85%;
+    padding: 0.8rem 1.2rem;
+  }
+  
+  .messages-area {
+    padding: 1.5rem;
+    min-height: 400px;
+  }
+}
+</style>
+
+  <section class="chat-main">
+    <div id="messages" class="messages-area">
+      {% for msg in messages %}
+        <div class="message-container{% if msg.is_me %} own{% endif %}">
+          <div class="message-bubble{% if msg.is_me %} own{% else %} other{% endif %}">
+            <p>{{ msg.message }}</p>
+            <small>{{ msg.sent_at.strftime('%H:%M') }}</small>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>🎉 Ihr seid jetzt verbunden!</p>
+          <p>Startet euer Gespräch mit einer Nachricht...</p>
+        </div>
+      {% endfor %}
+    </div>
+    
+    <form method="post" action="/chat/{{ connection_id }}/send" class="message-form">
+      <textarea name="message" placeholder="Schreibe eine Nachricht..." 
+                required maxlength="500" class="message-input" autofocus
+                rows="1" onkeydown="handleTextareaKeydown(event)"></textarea>
+      <button type="submit" class="send-btn">
+        <span>Senden</span>
+      </button>
+    </form>
+  </section>
+
+  <section class="info-section">
+    <h3>🎯 Gespräch beendet</h3>
+    <p>Die Voice-Verbindung wurde automatisch beendet. Ihr könnt jetzt über Text-Chat kommunizieren!</p>
+    <p><strong>💡 Tipp:</strong> Dieser Chat bleibt bestehen - ihr könnt jederzeit zurückkommen und weiter schreiben!</p>
+  </section>
+</div>
+
+<script>
+// Auto-scroll to bottom of messages
+const messagesDiv = document.getElementById('messages');
+messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+// Auto-refresh messages via AJAX instead of full page reload
+function loadNewMessages() {
+  const messagesDiv = document.getElementById('messages');
+  const currentScroll = messagesDiv.scrollTop;
+  const maxScroll = messagesDiv.scrollHeight - messagesDiv.clientHeight;
+  const isAtBottom = currentScroll >= maxScroll - 10;
+  
+  // Only check for new messages if user is not typing
+  const messageInput = document.querySelector('textarea[name="message"]');
+  if (document.activeElement !== messageInput) {
+    fetch(window.location.href + '/messages')
+      .then(response => response.json())
+      .then(data => {
+        if (data.messages && data.messages.length > 0) {
+          // Update messages without full reload
+          messagesDiv.innerHTML = data.html;
+          
+          // Maintain scroll position or scroll to bottom if user was at bottom
+          if (isAtBottom) {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          } else {
+            messagesDiv.scrollTop = currentScroll;
+          }
+        }
+      })
+      .catch(err => console.log('Message refresh failed:', err));
+  }
+}
+
+// Check for new messages every 2 seconds
+setInterval(loadNewMessages, 2000);
+
+// Focus message input
+document.querySelector('textarea[name="message"]').focus();
+
+// Handle textarea auto-resize and Enter key
+function handleTextareaKeydown(event) {
+  const textarea = event.target;
+  
+  // Auto-resize textarea
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+  
+  // Send message on Enter (but not Shift+Enter)
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    textarea.closest('form').submit();
+  }
+}
+
+// Auto-resize textarea on input
+document.querySelector('textarea[name="message"]').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+</script>
+{% endblock %}

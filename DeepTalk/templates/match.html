@@ -1,0 +1,482 @@
+{% extends 'base.html' %}
+
+{% block title %}Gesprächspartner suchen - DeepTalk{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+  {% if waiting %}
+    <!-- Waiting for Match -->
+    <section class="matching-status-card">
+      <div class="status-animation">
+        <div class="search-rings">
+          <div class="ring ring-1"></div>
+          <div class="ring ring-2"></div>
+          <div class="ring ring-3"></div>
+        </div>
+        <div class="search-icon">🔍</div>
+      </div>
+      
+      <div class="status-content">
+        <h1>Suche nach deinem Gesprächspartner</h1>
+        <p class="status-description">
+          Wir durchsuchen unsere Community nach jemandem, der zu deiner Stimmung und deinem gewünschten Gesprächsstil passt.
+        </p>
+        
+        <div class="queue-info">
+          <div class="queue-stats">
+            <div class="queue-stat">
+              <span class="stat-number">{{ queue_position or 1 }}</span>
+              <span class="stat-label">Deine Position</span>
+            </div>
+            <div class="queue-divider">von</div>
+            <div class="queue-stat">
+              <span class="stat-number">{{ total_waiting or 1 }}</span>
+              <span class="stat-label">Wartenden</span>
+            </div>
+          </div>
+          
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: {% if total_waiting and total_waiting > 0 %}{{ ((total_waiting - (queue_position or 1) + 1) / total_waiting * 100)|round }}{% else %}100{% endif %}%;"></div>
+          </div>
+        </div>
+        
+        <div class="status-indicator">
+          <span class="indicator-dot"></span>
+          <span id="status" class="status-text">Suche läuft...</span>
+        </div>
+        
+        <div class="waiting-actions">
+          <a href="/" class="btn btn-secondary">
+            <span>← Zurück zur Startseite</span>
+          </a>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Matching Tips -->
+    <section class="matching-tips">
+      <div class="tips-header">
+        <h2>💡 Während du wartest...</h2>
+      </div>
+      <div class="tips-grid">
+        <div class="tip-card">
+          <div class="tip-icon">🎧</div>
+          <h3>Headset bereit?</h3>
+          <p>Stelle sicher, dass dein Mikrofon und deine Kopfhörer funktionieren.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">🤔</div>
+          <h3>Gesprächsthemen</h3>
+          <p>Denk an interessante Geschichten oder Fragen, die du teilen möchtest.</p>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">😊</div>
+          <h3>Offen bleiben</h3>
+          <p>Sei authentisch und neugierig auf die Person, mit der du sprechen wirst.</p>
+        </div>
+      </div>
+    </section>
+    
+  {% else %}
+    <!-- Connection Established -->
+    <section class="connection-status-card">
+      <div class="connection-animation">
+        <div class="success-rings">
+          <div class="success-ring"></div>
+          <div class="success-ring"></div>
+        </div>
+        <div class="success-icon">✨</div>
+      </div>
+      
+      <div class="connection-content">
+        <h1>Verbindung wird hergestellt!</h1>
+        <p class="connection-description">
+          Perfekt! Wir haben jemanden gefunden, der zu dir passt. 
+          Du wirst gleich zu eurem privaten Voice-Chat weitergeleitet.
+        </p>
+        
+        <div class="connection-steps">
+          <div class="step completed">
+            <span class="step-icon">✅</span>
+            <span class="step-text">Partner gefunden</span>
+          </div>
+          <div class="step active">
+            <span class="step-icon">⚡</span>
+            <span class="step-text">Verbindung herstellen...</span>
+          </div>
+          <div class="step">
+            <span class="step-icon">🎙️</span>
+            <span class="step-text">Voice-Chat starten</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+</div>
+
+<style>
+/* Matching Status Card */
+.matching-status-card, .connection-status-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-2xl);
+  margin-bottom: var(--space-xl);
+  box-shadow: var(--shadow-xl);
+  text-align: center;
+}
+
+/* Search Animation */
+.status-animation, .connection-animation {
+  position: relative;
+  margin-bottom: var(--space-2xl);
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-rings {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+}
+
+.ring {
+  position: absolute;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+.ring-1 {
+  width: 60px;
+  height: 60px;
+  top: 20px;
+  left: 20px;
+}
+
+.ring-2 {
+  width: 80px;
+  height: 80px;
+  top: 10px;
+  left: 10px;
+  animation-delay: 0.3s;
+}
+
+.ring-3 {
+  width: 100px;
+  height: 100px;
+  animation-delay: 0.6s;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.33);
+    opacity: 1;
+  }
+  80%, 100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.search-icon {
+  font-size: 2.5rem;
+  z-index: 10;
+  position: relative;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Success Animation */
+.success-rings {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+}
+
+.success-ring {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border: 3px solid #10b981;
+  border-radius: 50%;
+  animation: success-pulse 1.5s ease-out infinite;
+}
+
+.success-ring:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+@keyframes success-pulse {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.success-icon {
+  font-size: 3rem;
+  z-index: 10;
+  position: relative;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+/* Status Content */
+.status-content h1, .connection-content h1 {
+  margin: 0 0 var(--space-lg) 0;
+  font-size: 2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.status-description, .connection-description {
+  margin: 0 0 var(--space-2xl) 0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Queue Info */
+.queue-info {
+  background: rgba(79, 70, 229, 0.1);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-2xl);
+}
+
+.queue-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.queue-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.queue-divider {
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.progress-bar {
+  height: 8px;
+  background: rgba(79, 70, 229, 0.1);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  border-radius: var(--radius-sm);
+  transition: width 0.3s ease;
+}
+
+/* Status Indicator */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-2xl);
+}
+
+.indicator-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: pulse-dot 1.5s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.status-text {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Connection Steps */
+.connection-steps {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2xl);
+  margin-top: var(--space-2xl);
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.step.completed, .step.active {
+  opacity: 1;
+}
+
+.step.active .step-icon {
+  animation: pulse 2s infinite;
+}
+
+.step-icon {
+  font-size: 1.5rem;
+}
+
+.step-text {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Matching Tips */
+.matching-tips {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.tips-header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+}
+
+.tips-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+}
+
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-xl);
+}
+
+.tip-card {
+  background: rgba(31, 41, 55, 0.3);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.tip-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-lg);
+}
+
+.tip-card h3 {
+  margin: 0 0 var(--space-md) 0;
+  color: var(--text-primary);
+}
+
+.tip-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Actions */
+.waiting-actions {
+  margin-top: var(--space-xl);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .queue-stats {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  
+  .queue-divider {
+    order: -1;
+  }
+  
+  .connection-steps {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+  
+  .tips-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+{% if waiting %}
+<script>
+let attempts = 0;
+const maxAttempts = 60; // 2 minutes
+
+function updateStatus() {
+  attempts++;
+  
+  if (attempts > maxAttempts) {
+    document.getElementById('status').innerHTML = 
+      '⏰ Suche beendet. <a href="/match" style="color: var(--primary);">Erneut versuchen</a>';
+    return;
+  }
+  
+  // Auto-refresh every 3 seconds
+  setTimeout(() => {
+    window.location.reload();
+  }, 3000);
+  
+  // Update status with animated dots
+  const dots = '.'.repeat((attempts % 3) + 1);
+  document.getElementById('status').textContent = `Suche läuft${dots}`;
+}
+
+// Start status updates
+setTimeout(updateStatus, 1000);
+</script>
+{% endif %}
+{% endblock %}

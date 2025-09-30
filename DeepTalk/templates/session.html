@@ -1,0 +1,544 @@
+{% extends 'base.html' %}
+
+{% block title %}Live Voice Session - DeepTalk{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+  <!-- Session Header -->
+  <section class="session-header">
+    <div class="session-info">
+      <h1>🎙️ Live Voice Session</h1>
+      <p>Tauche ein in ein authentisches Gespräch mit einem neuen Menschen</p>
+      <div class="room-info">
+        <span class="room-label">Raum:</span>
+        <code class="room-code">{{ room_key }}</code>
+      </div>
+    </div>
+  </section>
+
+  <div class="session-layout">
+    <!-- Voice Control Panel -->
+    <section class="voice-panel">
+      <div class="panel-header">
+        <h2>🎧 Audio Kontrolle</h2>
+        <p>Starte das Gespräch, wenn ihr beide bereit seid</p>
+      </div>
+
+      <div class="audio-controls">
+        <button id="btnStart" class="control-btn start-btn">
+          <span class="btn-icon">🎤</span>
+          <span class="btn-text">Mikro starten & verbinden</span>
+        </button>
+        
+        <button id="btnHangup" class="control-btn end-btn">
+          <span class="btn-icon">📞</span>
+          <span class="btn-text">Gespräch beenden</span>
+        </button>
+      </div>
+
+      <div class="connection-status" id="connectionStatus">
+        <span class="status-indicator waiting"></span>
+        <span class="status-text">Warten auf Verbindung...</span>
+      </div>
+
+      <audio id="remote" autoplay playsinline class="remote-audio"></audio>
+    </section>
+
+    <!-- Conversation Cards -->
+    <section class="conversation-panel">
+      <div class="panel-header">
+        <h2>💭 Gesprächsanregungen</h2>
+        <p>Falls euch mal die Worte fehlen - nutzt diese Karten als Inspiration</p>
+      </div>
+
+      <div class="conversation-cards">
+        {% for c in cards %}
+          <div class="conversation-card">
+            <div class="card-header">
+              <span class="card-topic">{{ c.topic }}</span>
+              <span class="card-depth depth-{{ c.depth.lower() }}">{{ c.depth }}</span>
+            </div>
+            <p class="card-prompt">{{ c.prompt }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Mutual Reveal Panel -->
+    <section class="reveal-panel">
+      <div class="panel-header">
+        <h2>🔓 Mutual Reveal</h2>
+        <p>Entscheidet gemeinsam, ob ihr euch besser kennenlernen möchtet</p>
+      </div>
+
+      <div class="reveal-explanation">
+        <div class="explanation-card">
+          <h3>Was passiert beim Mutual Reveal?</h3>
+          <div class="reveal-steps">
+            <div class="reveal-step">
+              <div class="step-icon">👥</div>
+              <div class="step-text">Profile werden ausgetauscht</div>
+            </div>
+            <div class="reveal-step">
+              <div class="step-icon">🎙️</div>
+              <div class="step-text">Voice-Chat wird beendet</div>
+            </div>
+            <div class="reveal-step">
+              <div class="step-icon">💬</div>
+              <div class="step-text">Text-Chat wird gestartet</div>
+            </div>
+            <div class="reveal-step">
+              <div class="step-icon">🤝</div>
+              <div class="step-text">Permanente Verbindung erstellt</div>
+            </div>
+          </div>
+          
+          <div class="reveal-note">
+            <span class="note-icon">💡</span>
+            <span><strong>Wichtig:</strong> Nur wenn beide "Ja" stimmen, passiert der Austausch!</span>
+          </div>
+        </div>
+      </div>
+      
+      <form method="post" action="/reveal/{{ sid }}" class="reveal-form">
+        <div class="reveal-buttons">
+          <button name="vote" value="yes" class="reveal-btn yes-btn">
+            <span class="btn-icon">✅</span>
+            <span class="btn-text">Profil freischalten</span>
+          </button>
+          <button name="vote" value="no" class="reveal-btn no-btn">
+            <span class="btn-icon">🔒</span>
+            <span class="btn-text">Anonym bleiben</span>
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<style>
+/* Session Header */
+.session-header {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-2xl);
+  margin-bottom: var(--space-xl);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.session-info h1 {
+  margin: 0 0 var(--space-md) 0;
+  font-size: 2rem;
+  font-weight: var(--font-weight-bold);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.session-info > p {
+  margin: 0 0 var(--space-lg) 0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.room-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  background: rgba(79, 70, 229, 0.1);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.room-label {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.room-code {
+  background: rgba(79, 70, 229, 0.2);
+  color: var(--primary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-family: 'Courier New', monospace;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Session Layout */
+.session-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+}
+
+/* Panel Styling */
+.voice-panel, .conversation-panel, .reveal-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.reveal-panel {
+  grid-column: 1 / -1;
+}
+
+.panel-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.panel-header h2 {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+}
+
+.panel-header p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* Voice Controls */
+.audio-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-xl) var(--space-2xl);
+  border-radius: var(--radius-xl);
+  border: none;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-md);
+}
+
+.start-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.end-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.end-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.btn-icon {
+  font-size: 1.25rem;
+}
+
+/* Connection Status */
+.connection-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: rgba(156, 163, 175, 0.1);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(156, 163, 175, 0.2);
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.waiting {
+  background: var(--accent);
+}
+
+.status-indicator.connected {
+  background: #10b981;
+}
+
+.status-text {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.remote-audio {
+  width: 100%;
+  margin-top: var(--space-lg);
+}
+
+/* Conversation Cards */
+.conversation-cards {
+  display: grid;
+  gap: var(--space-lg);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.conversation-card {
+  background: rgba(31, 41, 55, 0.3);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.conversation-card:hover {
+  background: rgba(31, 41, 55, 0.5);
+  transform: translateY(-1px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.card-topic {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.card-depth {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.depth-light {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.depth-medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--accent);
+}
+
+.depth-deep {
+  background: rgba(79, 70, 229, 0.2);
+  color: var(--primary);
+}
+
+.card-prompt {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Reveal Panel */
+.reveal-explanation {
+  margin-bottom: var(--space-2xl);
+}
+
+.explanation-card {
+  background: rgba(31, 41, 55, 0.3);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+}
+
+.explanation-card h3 {
+  margin: 0 0 var(--space-lg) 0;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.reveal-steps {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.reveal-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.step-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.step-text {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.reveal-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background: rgba(245, 158, 11, 0.1);
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: var(--text-secondary);
+}
+
+.note-icon {
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+/* Reveal Buttons */
+.reveal-buttons {
+  display: flex;
+  gap: var(--space-lg);
+}
+
+.reveal-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-xl) var(--space-2xl);
+  border-radius: var(--radius-xl);
+  border: none;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-md);
+}
+
+.yes-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.yes-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.no-btn {
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+}
+
+.no-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border-color: var(--primary);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .session-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .reveal-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .reveal-buttons {
+    flex-direction: column;
+  }
+  
+  .room-info {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+}
+</style>
+
+<script>
+  const room = "{{ room_key }}";
+  const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/signal/' + room);
+  const remoteAudio = document.getElementById('remote');
+  let pc, localStream;
+
+  async function start() {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    pc = new RTCPeerConnection({
+      iceServers: [{ urls: ['{{ stun }}'] }]
+    });
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    pc.ontrack = (e) => { remoteAudio.srcObject = e.streams[0]; };
+    pc.onicecandidate = e => {
+      if (e.candidate) ws.send(JSON.stringify({ type: 'candidate', candidate: e.candidate }));
+    };
+    // First peer creates offer; naive rule
+    const leader = room.charCodeAt(0) % 2 === 0;
+    if (leader) {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      ws.send(JSON.stringify({ type: 'offer', sdp: offer }));
+    }
+  }
+
+  ws.onmessage = async (msg) => {
+    const data = JSON.parse(msg.data);
+    if (data.type === 'offer') {
+      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      ws.send(JSON.stringify({ type: 'answer', sdp: answer }));
+    } else if (data.type === 'answer') {
+      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    } else if (data.type === 'candidate') {
+      try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch (e) { console.error(e); }
+    }
+  };
+
+  document.getElementById('btnStart').onclick = start;
+  document.getElementById('btnHangup').onclick = () => { 
+    // Close WebRTC connections
+    ws.close(); 
+    if (pc) pc.close(); 
+    if (localStream) localStream.getTracks().forEach(t=>t.stop()); 
+    
+    // End session on server
+    fetch('/session/{{ sid }}/end', { method: 'POST' })
+      .then(() => {
+        alert('Session beendet. Du wirst zur Startseite weitergeleitet.');
+        window.location.href = '/';
+      })
+      .catch(err => {
+        console.error('Session end failed:', err);
+        window.location.href = '/';
+      });
+  };
+</script>
+{% endblock %}
