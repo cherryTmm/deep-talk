@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}DeepTalk - Echte Gespräche, tiefe Verbindungen{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="description" content="DeepTalk - Die Plattform für authentische Gespräche und tiefe zwischenmenschliche Verbindungen">
+</head>
+<body>
+  <div class="app-container">
+    <header class="main-header">
+      <div class="header-content">
+        <div class="logo">
+          <span class="logo-icon">💬</span>
+          <h1>DeepTalk</h1>
+        </div>
+        <div class="header-right">
+          <nav class="main-nav">
+            <a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+              <span class="nav-icon">🏠</span>
+              <span>Start</span>
+            </a>
+            <a href="/profile" class="nav-link {% if request.endpoint == 'profile' %}active{% endif %}">
+              <span class="nav-icon">👤</span>
+              <span>Profil</span>
+            </a>
+            <a href="/connections" class="nav-link {% if request.endpoint == 'connections' %}active{% endif %}">
+              <span class="nav-icon">🤝</span>
+              <span>Verbindungen</span>
+            </a>
+          </nav>
+          <div class="user-status">
+            <div class="level-badge">
+              <span class="level-text">Level {{ current_user.level or 1 }}</span>
+              <span class="xp-text">{{ current_user.xp or 0 }} XP</span>
+            </div>
+            <div class="xp-bar">
+              <div class="xp-progress" style="width: {{ ((current_user.xp or 0) % 30) * 100 // 30 }}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+    
+    <footer class="main-footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <p class="footer-brand">DeepTalk</p>
+          <p class="footer-tagline">Echte Gespräche, tiefe Verbindungen</p>
+        </div>
+        <div class="footer-section">
+          <p class="footer-version">Version 1.0</p>
+          <p class="footer-feature">Voice Chat • Mutual Reveal • Text Messages</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+  
+  <!-- Global JavaScript -->
+  <script>
+    // Add smooth scroll behavior
+    document.documentElement.style.scrollBehavior = 'smooth';
+    
+    // Add loading states to buttons
+    document.addEventListener('DOMContentLoaded', function() {
+      const buttons = document.querySelectorAll('button[type="submit"], .btn');
+      buttons.forEach(button => {
+        button.addEventListener('click', function() {
+          if (!this.disabled) {
+            this.classList.add('loading');
+            setTimeout(() => this.classList.remove('loading'), 3000);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
